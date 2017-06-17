@@ -40,6 +40,13 @@ checkIfPointIsEmpty (Point c (x,y)) (Board a b points) = (x,y) == (x1,y1) && (co
     point = pointRow !! (x - 1)
     Point color (x1,y1) = point
 
+getPoint:: Board -> (Int,Int) -> Point
+getPoint (Board a b points) (x,y) = point
+    where
+        pointRow = points !! (y - 1)
+        point = pointRow !! (x-1)        
+
+
 addPoint :: Point -> Board -> Board
 addPoint (Point c (x,y)) (Board a b points) = Board a b pointsChanged
     where

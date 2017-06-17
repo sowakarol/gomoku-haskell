@@ -2,6 +2,7 @@ module Game where
 
 import Data.List
 import Data.Char
+import Data.Tree
 
 import Board
 import Player
@@ -40,9 +41,51 @@ isInteger s = case reads s :: [(Integer, String)] of
 
 
 
+--getting points in neighbourhood of another points
+getPossiblePointsForPlayer:: Board -> [Point]
+getPossiblePointsForPlayer (Board a b points) =[(Point color (x+ tmp1,y + tmp2)) | (Point color (x,y)) <- (concat points),not (checkIfPointIsEmpty (Point color (x,y)) (Board a b points)),tmp1 <- [-1, 0, 1], tmp2 <- [-1, 0, 1], x + tmp1 < a, x + tmp1 > 0, y+tmp2 < b, y +tmp2 > 0,checkIfPointIsInBoard (Point color (x + tmp1, y + tmp2)) (Board a b points), checkIfPointIsEmpty (Point color (x + tmp1, y + tmp2)) (Board a b points)  ]
+
+removeDuplicates::[Point] -> [Point]
+removeDuplicates x = union x x
+
+--making Boards with a 
+makesPossibleBoards :: [Point] -> Board -> Color -> [Board]
+makesPossibleBoards ((Point color coordinates):tail) board selectedColor= (addPointToBoard (Point selectedColor coordinates) board) : (makesPossibleBoards tail board color)
+makesPossibleBoards [] board color = []
+
+swapColor:: Color -> Color
+swapColor Cross = Circle
+swapColor Circle = Cross
+
+generateTree:: Player -> Board -> Tree Board 
+generateTree (Player color) board = Node board (map (generateTree (Player (swapColor color))) (makesPossibleBoards (removeDuplicates( getPossiblePointsForPlayer board)) board (swapColor color)))
+
+ratePoint:: Point -> Board -> Int
+ratePoint (Point color (x,y)) (Board a b points) = 
+    (rateVertical (Point color (x,y)) (points !! (x-1)) 0) + (rateVertical (Point color (x,y)) ( (transpose . reverse) points !! (x-1)) 0) + (rateVertical (Point color (x,y)) ((diagonals points) !! (y-1)) 0) + (rateVertical (Point color (x,y)) ((diagonals ( (transpose . reverse) points)) !! (y-1)) 0)
+
+rateVertical::Point -> [Point] -> Int ->Int
+rateVertical (Point color tmp) ((Point c (a,b)):ts) rate = if c == color then rateVertical (Point color tmp) ts rate+1 else (rateVertical (Point color tmp) ts 0)
+rateVertical (Point color tmp) [] rate = rate
+-- getPointIfIsInNeighbourhood:: Point -> Board -> Bool
+-- getPointIfIsInNeighbourhood (Point color (x,y)) (Board a b points) = if color == Empty then
+--     if (checkIfPointIsInBoard(getPoint (board (x+1,y)) board)) && not(checkIfPointIsEmpty(Point _ (x+1,y)) board)then True else
+--         if (checkIfPointIsInBoard(Point _ (x-1,y)) board) && not(checkIfPointIsEmpty(Point _ (x-1,y)) board) then True else
+--             if (checkIfPointIsInBoard(Point _ (x,y + 1)) board) && not(checkIfPointIsEmpty(Point _ (x,y + 1)) board) then True else
+--                 if (checkIfPointIsInBoard(Point _ (x,y -1)) board) && not(checkIfPointIsEmpty(Point _ (x,y -1)) board) then True else
+--                     if (checkIfPointIsInBoard(Point _ (x + 1,y + 1)) board) && not(checkIfPointIsEmpty(Point _ (x + 1,y + 1)) board) then True else
+--                         if (checkIfPointIsInBoard(Point _ (x - 1,y + 1)) board) && not(checkIfPointIsEmpty(Point _ (x - 1,y + 1)) board) then True else
+--                             if (checkIfPointIsInBoard(Point _ (x-1,y-1)) board) && not(checkIfPointIsEmpty(Point _ (x-1,y-1)) board) then True else
+--                                 if (checkIfPointIsInBoard(Point _ (x+1,y-1)) board) && not(checkIfPointIsEmpty(Point _ (x+1,y-1)) board) then True else False
+--                                     else False
+
+
+
+
+
 playerMove :: Game -> IO()
 playerMove (Game turns (Player color) otherPlayer board) = do
-    putStr ("Write column - Player " ++ (show color))
+    putStr ("Write column - Player " ++ (show color) ++ " ")
     x <- getLine
     if (isInteger x) then do 
         putStr "Write row: "
@@ -61,30 +104,6 @@ playerMove (Game turns (Player color) otherPlayer board) = do
         else do
             putStrLn "Wrong value, try again!"
             playerMove (Game turns (Player color) otherPlayer board)
-
-
-
-
---         putStr "Write row: "
---         y <- getLine
---         if (isInteger y) then do
---         let boardAfterMove = (addPointToBoard (Point color (read x::Int, read y)) board)
---             if (boardAfterMove == board) then do
---                 putStrLn "Wrong x y, try again!"
---                 playerMove board (Player color)
---             else do 
---                     putStrLn $ show boardAfterMove
---                     turn (turns+1) otherPlayer (Player color) boardAfterMove
---         else
---             putStrLn "Wrong value, try again!"
---             playerMove board (Player color)
---     else do
---         putStrLn "Wrong value, try again!"
---         playerMove board (Player color)
-
--- if x then do
---     putStr ""
---     else do
 
 
 
