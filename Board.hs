@@ -12,6 +12,9 @@ data Board = Board{width::Int, height::Int, points::[[Point]]}
 instance Show Board where
     show (Board _ _ points) = intercalate "\n" $ map show points
 
+instance Eq Board where
+    (Board a b points1) == (Board c d points2) = (a == c && b == d && points1 == points2)
+
 generateEmptyBoard :: Int -> Int -> Board
 generateEmptyBoard width height = Board width height points
     where
@@ -31,11 +34,11 @@ addPointToBoard (Point c (x,y)) (Board a b points)
     | otherwise = (Board a b points)
 
 checkIfPointIsEmpty:: Point -> Board -> Bool
-checkIfPointIsEmpty (Point c (x,y)) (Board a b points) = (Point c (x,y)) == point && (color == Empty)
+checkIfPointIsEmpty (Point c (x,y)) (Board a b points) = (x,y) == (x1,y1) && (color == Empty)
     where 
     pointRow = points !! (y - 1)
     point = pointRow !! (x - 1)
-    Point color _ = point
+    Point color (x1,y1) = point
 
 addPoint :: Point -> Board -> Board
 addPoint (Point c (x,y)) (Board a b points) = Board a b pointsChanged

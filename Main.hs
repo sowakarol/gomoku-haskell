@@ -12,6 +12,7 @@ main = do
     putStrLn "Write 'm' if you want to play with a friend or 'c' if you want to play with computer"
     character <- getChar
     --board <- generateEmptyBoard 19 19
+    tmp <- getLine
     if character == 'm' then loopTwoPlayers else if character == 'c' then loop else initializationError
 
 initializationError = do
@@ -21,7 +22,9 @@ initializationError = do
 
 loopTwoPlayers :: IO()
 loopTwoPlayers = do
-    play (Game 0 (Player Cross) (Player Circle) (generateEmptyBoard 19 19)) 
+    let board = generateEmptyBoard 19 19
+    putStrLn $ show board
+    turn (Game 0 (Player Cross) (Player Circle) board) 
 
 loop:: IO()
 loop = do
