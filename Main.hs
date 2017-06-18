@@ -28,5 +28,7 @@ loopTwoPlayers = do
 
 loop:: IO()
 loop = do
-    putChar 'c'
+    let board = generateEmptyBoard 19 19
+    putStrLn $ show board
+    playerVsPCMove (Game 0 (Player Cross) (Player Circle) board)
 

@@ -60,13 +60,46 @@ swapColor Circle = Cross
 generateTree:: Player -> Board -> Tree Board 
 generateTree (Player color) board = Node board (map (generateTree (Player (swapColor color))) (makesPossibleBoards (removeDuplicates( getPossiblePointsForPlayer board)) board (swapColor color)))
 
-ratePoint:: Point -> Board -> Int
-ratePoint (Point color (x,y)) (Board a b points) = 
-    (rateVertical (Point color (x,y)) (points !! (x-1)) 0) + (rateVertical (Point color (x,y)) ( (transpose . reverse) points !! (x-1)) 0) + (rateVertical (Point color (x,y)) ((diagonals points) !! (y-1)) 0) + (rateVertical (Point color (x,y)) ((diagonals ( (transpose . reverse) points)) !! (y-1)) 0)
+getBoardFromTree:: Tree Board -> Board
+getBoardFromTree (Node board _) = board
 
-rateVertical::Point -> [Point] -> Int ->Int
-rateVertical (Point color tmp) ((Point c (a,b)):ts) rate = if c == color then rateVertical (Point color tmp) ts rate+1 else (rateVertical (Point color tmp) ts 0)
-rateVertical (Point color tmp) [] rate = rate
+
+rateBoard:: Player -> Board -> Int
+rateBoard (Player color) (Board a b points) = 
+    sum [((rateVertical (Player color) (points !! (x-1)) 0) + (rateVertical (Player color) ( (transpose . reverse) points !! (x-1)) 0) + (rateVertical (Player color) ((diagonals points) !! (y-1)) 0) + (rateVertical (Player color) ((diagonals ( (transpose . reverse) points)) !! (y-1)) 0) ) | x <- [1..a], y <- [1..b]]
+
+rateVertical::Player -> [Point] -> Int ->Int
+rateVertical (Player color) ((Point c (a,b)):ts) rate = if c == color then rateVertical (Player color) ts rate+1 else (rateFragment rate) + (rateVertical (Player color) ts 0)
+rateVertical (Player color) [] rate 
+    |rate == 0 = 0
+    |rate == 1 = 5
+    |rate == 2 = 12
+    |rate == 3 = 30
+    |rate == 4 = 45
+    |rate == 5 = 60
+
+rateFragment:: Int -> Int
+rateFragment rate
+    |rate == 0 = 0
+    |rate == 1 = 5
+    |rate == 2 = 12
+    |rate == 3 = 30
+    |rate == 4 = 45
+    |rate == 5 = 60
+
+maxIndex::(Eq a, Ord a) => [a]->Int
+maxIndex list = head $ filter ((== maximum list) . (list !!)) [0..]
+
+minmax:: Player -> Board -> Board
+minmax (Player color) board = max
+    where
+    possibleChoices = (makesPossibleBoards (getPossiblePointsForPlayer board) board color)
+    trees = (map (generateTree (Player color)) possibleChoices)
+    boards = (map getBoardFromTree trees)
+    ratedBoards = map (rateBoard (Player color)) boards
+    maxInd = maxIndex ratedBoards
+    max = boards !! maxInd
+
 -- getPointIfIsInNeighbourhood:: Point -> Board -> Bool
 -- getPointIfIsInNeighbourhood (Point color (x,y)) (Board a b points) = if color == Empty then
 --     if (checkIfPointIsInBoard(getPoint (board (x+1,y)) board)) && not(checkIfPointIsEmpty(Point _ (x+1,y)) board)then True else
@@ -106,6 +139,47 @@ playerMove (Game turns (Player color) otherPlayer board) = do
             playerMove (Game turns (Player color) otherPlayer board)
 
 
+playerVsPCMove :: Game -> IO()
+playerVsPCMove (Game turns (Player color) otherPlayer board) = do
+    putStr ("Write column - Player " ++ (show color) ++ " ")
+    x <- getLine
+    if (isInteger x) then do 
+        putStr "Write row: "
+        y <- getLine
+        if (isInteger y) then do 
+            let boardAfterMove = (addPointToBoard (Point color (read x::Int, read y)) board)
+            if (boardAfterMove == board) then do 
+                putStrLn "Wrong x y, try again!"
+                playerVsPCMove (Game turns (Player color) otherPlayer board)
+                else do
+                    putStrLn $ show boardAfterMove
+                    turnAIPC (Game (turns+1) otherPlayer (Player color) boardAfterMove)
+            else do
+                putStrLn "Wrong value, try again!"
+                playerVsPCMove (Game turns (Player color) otherPlayer board)
+        else do
+            putStrLn "Wrong value, try again!"
+            playerVsPCMove (Game turns (Player color) otherPlayer board)
+
+turnAIPC::Game -> IO()
+turnAIPC (Game turns currentPlayer otherPlayer board) = do
+    if(isOver board) then
+        playerWon otherPlayer (turns*2) board
+    else do
+        let board1 = (minmax currentPlayer board)
+        putStrLn "\n"
+        putStrLn (show board1)
+        if(isOver board1) then
+            computerWin otherPlayer turns board1
+        else do   
+            playerVsPCMove (Game turns otherPlayer currentPlayer board1)
+
+
+computerWin::Player -> Int-> Board-> IO()
+computerWin (Player color) turns board = do
+    putStrLn "\n"
+    putStrLn (show board)
+    putStrLn ("Sorry player " ++ (show color) ++ " :( Computer has won with you in " ++ (show turns) ++ " turns")
 
 
 turn :: Game -> IO()
