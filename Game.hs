@@ -66,7 +66,7 @@ getBoardFromTree (Node board _) = board
 
 rateBoard:: Player -> Board -> Int
 rateBoard (Player color) (Board a b points) = 
-    sum [((rateVertical (Player color) (points !! (x-1)) 0) + (rateVertical (Player color) ( (transpose . reverse) points !! (x-1)) 0) + (rateVertical (Player color) ((diagonals points) !! (y-1)) 0) + (rateVertical (Player color) ((diagonals ( (transpose . reverse) points)) !! (y-1)) 0) ) | x <- [1..a], y <- [1..b]]
+    sum [((rateVertical (Player color) (points !! (x-1)) 0) + (rateVertical (Player color) ( (transpose . reverse) points !! (x-1)) 0) + (rateVertical (Player color) ((diagonals points) !! (y-1)) 0) + (rateVertical (Player color) ((diagonals ( (transpose . reverse) points)) !! (y-1)) 0) ) - ((rateVertical (Player $ (swapColor color)) (points !! (x-1)) 0)) - (rateVertical (Player $ (swapColor color)) ( (transpose . reverse) points !! (x-1)) 0) - (rateVertical (Player (swapColor color)) ((diagonals points) !! (y-1)) 0) - (rateVertical (Player (swapColor color)) ((diagonals ( (transpose . reverse) points)) !! (y-1)) 0) | x <- [1..a], y <- [1..b]]
 
 rateVertical::Player -> [Point] -> Int ->Int
 rateVertical (Player color) ((Point c (a,b)):ts) rate = if c == color then rateVertical (Player color) ts rate+1 else (rateFragment rate) + (rateVertical (Player color) ts 0)
